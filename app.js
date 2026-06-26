@@ -8,6 +8,7 @@ const STORAGE_KEY = "scanline_admin_config";
 
 const DEFAULT_CONFIG = {
   sheetId: "1DhPGeiQZh-P7tln3MiBZfrvb35B-_12mf-DCBZl194I",
+  imageLookupUrl: "",
   knownBrands: [
     "Apple", "Samsung", "OnePlus", "Xiaomi", "Redmi", "Realme", "Vivo",
     "Oppo", "Sony", "boAt", "Noise", "JBL", "Bose", "Garmin", "Fitbit",
@@ -34,7 +35,8 @@ function getConfig() {
     if (!stored) return structuredClone(DEFAULT_CONFIG);
     const parsed = JSON.parse(stored);
     return {
-      sheetId: parsed.sheetId || DEFAULT_CONFIG.sheetId,
+     sheetId: parsed.sheetId || DEFAULT_CONFIG.sheetId,
+      imageLookupUrl: typeof parsed.imageLookupUrl === "string" ? parsed.imageLookupUrl : DEFAULT_CONFIG.imageLookupUrl,
       knownBrands: Array.isArray(parsed.knownBrands) && parsed.knownBrands.length > 0
         ? parsed.knownBrands : DEFAULT_CONFIG.knownBrands,
       categoryLabels: parsed.categoryLabels && Object.keys(parsed.categoryLabels).length > 0
