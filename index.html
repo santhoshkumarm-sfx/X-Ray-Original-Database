@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>X-ray Originals Database</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="logo.png" alt="Shadowfax" class="logo" />
+      </div>
+
+      <div class="sidebar-title">Library</div>
+      <div id="sidebar-categories" class="sidebar-categories"></div>
+
+      <div class="sidebar-footer">
+        <button id="settings-tab-button" class="settings-link">Settings</button>
+        <div class="build-marker">Build 2026-07-19c</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- Top bar: upload (left) + search (center) -->
+      <div class="topbar">
+        <div class="topbar-upload">
+          <button id="upload-button" class="upload-button" title="Upload an x-ray image to find a match">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 2V10M8 2L5 5M8 2L11 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2.5 11V12.5C2.5 13.0523 2.94772 13.5 3.5 13.5H12.5C13.0523 13.5 13.5 13.0523 13.5 12.5V11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            Upload image
+          </button>
+          <input type="file" id="upload-file-input" accept="image/*" class="hidden-input" />
+        </div>
+
+        <div class="topbar-search">
+          <div class="search-bar">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.6" />
+              <line x1="12.4" y1="12.4" x2="16" y2="16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+            <input type="text" id="search-input" placeholder="Search by AWB, product name, or brand…" autofocus />
+          </div>
+          <div class="link-paste-row">
+            <input type="text" id="link-paste-input" placeholder="…or paste an x-ray image link" />
+            <button id="link-paste-button" class="link-paste-button">Use link</button>
+          </div>
+        </div>
+
+        <div class="topbar-spacer"></div>
+      </div>
+
+      <!-- Upload match banner (shown only when an uploaded/pasted image is active) -->
+      <div id="match-banner" class="match-banner" hidden>
+        <div class="match-banner-left">
+          <img id="match-preview" class="match-preview" alt="Uploaded x-ray" />
+          <div>
+            <div class="match-banner-title">Matching against your image</div>
+            <div id="match-banner-sub" class="match-banner-sub">Pick the closest category, or check below for exact matches.</div>
+          </div>
+        </div>
+        <button id="match-clear" class="match-clear">Clear &amp; browse all</button>
+      </div>
+
+      <!-- Search results -->
+      <section id="search-results-section" class="results-section" hidden>
+        <div id="search-results"></div>
+      </section>
+
+      <!-- Match results (upload/paste flow) -->
+      <section id="match-results-section" class="results-section" hidden>
+        <div id="match-results"></div>
+      </section>
+
+      <!-- Default: browse library, grouped by category, shuffled order -->
+      <section id="browse-section" class="results-section">
+        <div id="browse-groups"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settings-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <button id="settings-close" class="modal-close" aria-label="Close settings">&times;</button>
+
+      <div id="pin-gate" class="pin-wrap">
+        <form id="pin-form" class="pin-form">
+          <span class="label">Admin PIN</span>
+          <input type="password" id="pin-input" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="off" />
+          <span id="pin-error" class="error-text" hidden>Incorrect PIN</span>
+          <button type="submit" class="save-button">Unlock settings</button>
+          <p class="note">This PIN keeps day-to-day operators out of settings by mistake — it isn't strong security, since it's checked in this page's own code. Don't use it to protect anything sensitive.</p>
+        </form>
+      </div>
+
+      <div id="settings-panel" class="settings-wrap" hidden>
+        <div class="notice">
+          <span class="notice-label">Where this is stored</span>
+          Settings are saved in this browser only, not on a server. They won't automatically appear on other devices. To copy settings to another device or browser, use Export below and paste the result into Import on the other one.
+        </div>
+
+        <div class="section">
+          <label class="label" for="setting-sheet-id">Google Sheet ID</label>
+          <p class="hint">The long ID in your sheet's URL, between <code>/d/</code> and <code>/edit</code>.</p>
+          <input type="text" id="setting-sheet-id" class="input" />
+        </div>
+
+        <div class="section">
+          <label class="label" for="setting-image-folder">Fallback images folder</label>
+          <p class="hint">Paste the shared Drive folder link (or just its ID). Used to build a "Search AWB in Drive" link for any row that doesn't have its own X-ray_image link — for example when your sheet only lists Awb number / Product_catagories / Product_name.</p>
+          <input type="text" id="setting-image-folder" class="input" placeholder="https://drive.google.com/drive/folders/..." />
+        </div>
+
+        <div class="section">
+          <label class="label" for="setting-brands">Known brands</label>
+          <p class="hint">Comma-separated. Used to detect a product's brand from its listing text since the sheet doesn't have a brand column.</p>
+          <textarea id="setting-brands" class="textarea" rows="3"></textarea>
+        </div>
+
+        <div class="section">
+          <span class="label">Category labels</span>
+          <p class="hint">Maps the short code used in the sheet's <code>product_category</code> column to a readable label shown in the app.</p>
+          <div class="category-table">
+            <div class="category-header-row"><span>Sheet code</span><span>Display label</span><span></span></div>
+            <div id="category-rows"></div>
+          </div>
+          <button id="add-category-row" class="add-button">+ Add category</button>
+        </div>
+
+        <div class="actions-row">
+          <button id="save-settings" class="save-button">Save settings</button>
+          <button id="reset-settings" class="reset-button">Reset to defaults</button>
+          <span id="settings-saved-message" class="saved-message"></span>
+        </div>
+
+        <div class="section">
+          <span class="label">Move settings to another device</span>
+          <div class="transfer-row">
+            <button id="export-settings" class="export-button">Copy current settings</button>
+          </div>
+          <textarea id="import-text" class="textarea" rows="3" placeholder="Paste settings JSON here, then click Import"></textarea>
+          <span id="import-error" class="error-text" hidden></span>
+          <button id="import-settings" class="import-button" disabled>Import</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMAGE LIGHTBOX -->
+  <div id="lightbox-overlay" class="lightbox-overlay" hidden>
+    <div class="lightbox-box">
+      <button id="lightbox-close" class="modal-close lightbox-close-btn" aria-label="Close image viewer">&times;</button>
+      <div class="lightbox-image-wrap">
+        <img id="lightbox-image" class="lightbox-image" alt="" />
+      </div>
+      <div class="lightbox-footer">
+        <div class="lightbox-info">
+          <span id="lightbox-name" class="lightbox-name"></span>
+          <span id="lightbox-awb" class="lightbox-awb"></span>
+        </div>
+        <div class="lightbox-actions">
+          <a id="lightbox-download" class="lightbox-download-btn" download target="_blank" rel="noreferrer">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M8 2V10M8 10L5 7M8 10L11 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2.5 11.5V12.5C2.5 13.0523 2.94772 13.5 3.5 13.5H12.5C13.0523 13.5 13.5 13.0523 13.5 12.5V11.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            Download
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=2026-07-19c"></script>
+</body>
+</html>
